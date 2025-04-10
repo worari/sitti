@@ -1,2 +1,0 @@
-# sitti
-Dop Sitti-RTA
