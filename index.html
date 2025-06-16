@@ -23,6 +23,7 @@
             <th class="p-2 border">เลขหนังสือ</th>
             <th class="p-2 border">วันที่</th>
             <th class="p-2 border">เอกสาร</th>
+            <th class="p-2 border">สถานะ</th>
           </tr>
         </thead>
         <tbody id="adminTableBody" class="text-center"></tbody>
@@ -221,7 +222,14 @@
             <td class="border p-2">${row.Date}</td>
             <td class="border p-2 space-y-1">
               ${row.files.map(url => url ? `<a href="${url}" target="_blank" class="text-blue-600 underline block">ดู</a>` : "").join("")}
-            </td>`;
+            </td>
+            <td class="border p-2">
+    <select data-email="${row.Email}" onchange="updateStatus(this)" class="text-sm border rounded px-2 py-1">
+      ${["รอตรวจสอบ", "กำลังดำเนินการ", "อนุมัติ", "เสร็จสิ้น"].map(status => `
+        <option value="${status}" ${row.status === status ? "selected" : ""}>${status}</option>
+      `).join("")}
+    </select>
+  </td>`;
           adminTableBody.appendChild(tr);
         });
       } else {
