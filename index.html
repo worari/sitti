@@ -9,6 +9,28 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
+
+  <!-- Admin Dashboard -->
+  <div id="adminDashboard" class="hidden px-4 py-6">
+    <div class="max-w-6xl mx-auto bg-white shadow-lg rounded-2xl p-6">
+      <h2 class="text-2xl font-bold mb-4">📊 รายการเอกสารที่ส่งเข้ามา</h2>
+      <table class="w-full table-auto border text-sm">
+        <thead class="bg-gray-200 text-gray-700">
+          <tr>
+            <th class="p-2 border">เวลา</th>
+            <th class="p-2 border">ชื่อ-สกุล</th>
+            <th class="p-2 border">หน่วย</th>
+            <th class="p-2 border">เลขหนังสือ</th>
+            <th class="p-2 border">วันที่</th>
+            <th class="p-2 border">เอกสาร</th>
+          </tr>
+        </thead>
+        <tbody id="adminTableBody" class="text-center"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Login Page -->
   <div id="loginPage" class="flex items-center justify-center h-screen">
     <div class="bg-white shadow-lg rounded-2xl p-10 text-center w-full max-w-md">
       <h1 class="text-2xl font-bold text-gray-700 mb-6">เข้าสู่ระบบ</h1>
@@ -16,6 +38,7 @@
     </div>
   </div>
 
+  <!-- Form Page -->
   <div id="formPage" class="hidden px-4 py-6">
     <div class="max-w-3xl mx-auto bg-white shadow-lg rounded-2xl p-8">
       <div class="flex justify-between items-center mb-6">
@@ -24,33 +47,34 @@
       </div>
       <form id="uploadForm" class="space-y-4">
         <div class="grid grid-cols-2 gap-4">
-          <input type="text" name="CitizenID" required placeholder="เลขบัตรประชาชน" class="input" />
-          <input type="text" name="Name" required placeholder="ชื่อ" class="input" />
-          <input type="text" name="Surname" required placeholder="นามสกุล" class="input" />
-          <input type="text" name="Department" placeholder="หน่วยงาน" class="input" />
-          <input type="text" name="BookNo" placeholder="เลขหนังสือ" class="input" />
-          <input type="date" name="Date" class="input" />
+          <input type="text" name="CitizenID" required placeholder="เลขบัตรประชาชน" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400" />
+          <input type="text" name="Name" required placeholder="ชื่อ" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400" />
+          <input type="text" name="Surname" required placeholder="นามสกุล" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400" />
+          <input type="text" name="Department" placeholder="หน่วยงาน" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400" />
+          <input type="text" name="BookNo" placeholder="เลขหนังสือ" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400" />
+          <input type="date" name="Date" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400" />
         </div>
 
-        <select name="external" class="input">
+        <select name="external" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400">
           <option value="false">📎 ใน กห.</option>
           <option value="true">📎 นอก กห.</option>
         </select>
 
         <label class="block font-medium text-gray-700">แนบเอกสาร:</label>
-        <div id="dropzone" class="dropzone">
+        <div id="dropzone" class="w-full border-2 border-dashed border-gray-400 p-6 text-center cursor-pointer rounded-lg">
           <p class="text-gray-500">ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์</p>
         </div>
         <input type="file" id="fileInput" multiple hidden />
         <ul id="fileList" class="text-sm text-gray-600 list-disc ml-6"></ul>
 
         <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-xl hover:bg-green-700 transition">📤 ส่งข้อมูล</button>
-        <button onclick="testConnection()" class="text-xs underline text-blue-500">🧪 ทดสอบการเชื่อมต่อ GAS</button>
+        <button onclick="testConnection(); return false;" class="text-xs underline text-blue-500">🧪 ทดสอบการเชื่อมต่อ GAS</button>
       </form>
     </div>
   </div>
 
   <script>
+    // === Firebase Config ===
     const firebaseConfig = {
       apiKey: "AIzaSyDjfV1qQGrkgivXX-5EYfvYHWxKrcFCT0M",
       authDomain: "sittiapp-f5c83.firebaseapp.com",
@@ -60,17 +84,24 @@
 
     firebase.initializeApp(firebaseConfig);
 
-    let currentUser = null;
-    let files = [];
-
-    // Cache DOM elements
+    // === Elements ===
     const loginPage = document.getElementById("loginPage");
     const formPage = document.getElementById("formPage");
+    const adminDashboard = document.getElementById("adminDashboard");
+    const adminTableBody = document.getElementById("adminTableBody");
     const userEmailDisplay = document.getElementById("userEmail");
     const dropzone = document.getElementById("dropzone");
     const fileInput = document.getElementById("fileInput");
     const fileList = document.getElementById("fileList");
     const uploadForm = document.getElementById("uploadForm");
+
+    let currentUser = null;
+    let files = [];
+
+    const ADMINS = ["sitti.dop@gmail.com"]; // เปลี่ยนเป็นอีเมลแอดมินจริง
+    function isAdmin(user) {
+      return user && ADMINS.includes(user.email);
+    }
 
     function updateUIForUser(user) {
       if (user) {
@@ -90,25 +121,22 @@
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
         await firebase.auth().signInWithPopup(provider);
-        // onAuthStateChanged will handle UI updates
       } catch (error) {
-        console.error("Sign in error:", error);
         alert("เกิดข้อผิดพลาดในการเข้าสู่ระบบ: " + error.message);
       }
     }
 
     dropzone.addEventListener("click", () => fileInput.click());
-    fileInput.addEventListener("change", (e) => { // Corrected: fileInput instead of fileInput
+    fileInput.addEventListener("change", e => {
       files = [...e.target.files];
       updateFileList();
     });
-
-    dropzone.addEventListener("dragover", (e) => {
+    dropzone.addEventListener("dragover", e => {
       e.preventDefault();
       dropzone.classList.add("bg-blue-100");
     });
     dropzone.addEventListener("dragleave", () => dropzone.classList.remove("bg-blue-100"));
-    dropzone.addEventListener("drop", (e) => {
+    dropzone.addEventListener("drop", e => {
       e.preventDefault();
       dropzone.classList.remove("bg-blue-100");
       files = [...e.dataTransfer.files];
@@ -129,17 +157,15 @@
       if (!currentUser) return alert("กรุณา Login ก่อน!");
 
       const token = await currentUser.getIdToken();
-      const form = e.target;
-      const formData = new FormData(form);
+      const formData = new FormData(e.target);
       formData.append("idToken", token);
       files.forEach(file => formData.append(file.name, file));
 
       const res = await fetch(GAS_URL, { method: "POST", body: formData });
       const json = await res.json();
-
       if (json.success) {
         alert("✅ ส่งข้อมูลสำเร็จแล้ว");
-        form.reset();
+        e.target.reset();
         files = [];
         updateFileList();
       } else {
@@ -147,40 +173,52 @@
       }
     });
 
-    firebase.auth().onAuthStateChanged(user => {
-      updateUIForUser(user);
-    });
-
-    // ตรวจสอบว่า Firebase ถูก config ไหม
-    if (firebase.apps.length === 0) {
-      // This typically means initializeApp was not called or failed silently before this point.
-      // If initializeApp throws an error, script execution might stop before this.
-      alert("❌ Firebase ยังไม่ได้เชื่อมต่อ! กรุณาตรวจสอบการตั้งค่า");
-    } else {
-      console.log("✅ Firebase เชื่อมต่อเรียบร้อย");
-    }
-
     async function testConnection() {
       try {
-        const res = await fetch(GAS_URL); // Added await
+        const res = await fetch(GAS_URL);
         if (res.ok) {
           alert("✅ เชื่อมต่อ GAS ได้เรียบร้อย");
         } else {
-          alert(`❌ ไม่สามารถเชื่อมต่อ GAS ได้ (สถานะ: ${res.status})`);
+          alert("❌ ไม่สามารถเชื่อมต่อ GAS ได้ (status: " + res.status + ")");
         }
       } catch (err) {
-        alert("🚫 ข้อผิดพลาดในการเชื่อมต่อ GAS: " + err.message);
+        alert("🚫 ข้อผิดพลาด: " + err.message);
       }
     }
+
+    async function loadAdminDashboard() {
+      const res = await fetch(`${GAS_URL}?mode=view`);
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        adminTableBody.innerHTML = "";
+        json.data.forEach(row => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="border p-2">${row.timestamp}</td>
+            <td class="border p-2">${row.Name} ${row.Surname}</td>
+            <td class="border p-2">${row.Department}</td>
+            <td class="border p-2">${row.BookNo}</td>
+            <td class="border p-2">${row.Date}</td>
+            <td class="border p-2 space-y-1">
+              ${row.files.map(url => url ? `<a href="${url}" target="_blank" class="text-blue-600 underline block">ดู</a>` : "").join("")}
+            </td>`;
+          adminTableBody.appendChild(tr);
+        });
+      } else {
+        alert("❌ โหลดข้อมูลไม่สำเร็จ");
+      }
+    }
+
+    firebase.auth().onAuthStateChanged(user => {
+      updateUIForUser(user);
+      if (isAdmin(user)) {
+        adminDashboard.classList.remove("hidden");
+        loadAdminDashboard();
+      } else {
+        adminDashboard.classList.add("hidden");
+      }
+    });
   </script>
 
-  <style>
-    .input {
-      @apply w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400;
-    }
-    .dropzone {
-      @apply w-full border-2 border-dashed border-gray-400 p-6 text-center cursor-pointer rounded-lg;
-    }
-  </style>
 </body>
 </html>
