@@ -159,7 +159,7 @@
       const token = await currentUser.getIdToken();
       const formData = new FormData(e.target);
       formData.append("idToken", token);
-      files.forEach(file => formData.append(file.name, file));
+      files.forEach(file => formData.append("files[]", file));
 
       const res = await fetch(GAS_URL, { method: "POST", body: formData });
       const json = await res.json();
