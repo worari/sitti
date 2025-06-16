@@ -43,10 +43,10 @@
     <div class="max-w-3xl mx-auto bg-white shadow-lg rounded-2xl p-8">
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl font-semibold text-gray-800">ระบบรับรองเวลาราชการตอนเป็นทหาร</h2>
-        <span id="userEmail" class="text-sm text-gray-600"></span>
-        <div style="position: fixed; top: 10px; right: 10px;">
-  <button onclick="logout()">Logout</button>
-</div>
+        <span id="userEmail" class="text-sm text-gray-600"></span> 
+        <button onclick="logout()" class="text-sm bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition">
+      🚪 ออกจากระบบ
+    </button>       
       </div>
       <form id="uploadForm" class="space-y-4">
         <div class="grid grid-cols-2 gap-4">
@@ -75,6 +75,22 @@
       </form>
     </div>
   </div>
+
+  <!-- Success Modal -->
+<div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+  <div class="bg-white p-6 rounded-xl shadow-xl text-center space-y-4">
+    <p class="text-green-600 text-lg font-bold">✅ ส่งข้อมูลสำเร็จแล้ว</p>
+    <button onclick="closeModal()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">ปิด</button>
+  </div>
+</div>
+
+<!-- Logout Button (แสดงเมื่อ Login แล้ว) -->
+<div id="logoutSection" class="hidden fixed top-4 right-4 z-40">
+  <button onclick="logout()" class="bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700 transition">
+    🚪 ออกจากระบบ
+  </button>
+</div>
+
 
   <script>
     // === Firebase Config ===
@@ -107,18 +123,20 @@
     }
 
     function updateUIForUser(user) {
-      if (user) {
-        currentUser = user;
-        loginPage.classList.add("hidden");
-        formPage.classList.remove("hidden");
-        userEmailDisplay.textContent = `👤 ${user.email}`;
-      } else {
-        currentUser = null;
-        loginPage.classList.remove("hidden");
-        formPage.classList.add("hidden");
-        userEmailDisplay.textContent = "";
-      }
-    }
+  if (user) {
+    currentUser = user;
+    loginPage.classList.add("hidden");
+    formPage.classList.remove("hidden");
+    userEmailDisplay.textContent = `👤 ${user.email}`;
+  } else {
+    currentUser = null;
+    loginPage.classList.remove("hidden");
+    formPage.classList.add("hidden");
+    userEmailDisplay.textContent = "";
+  }
+  document.getElementById("logoutSection").classList.toggle("hidden", !user);
+}
+
 
     async function signIn() {
       try {
@@ -167,13 +185,14 @@
       const res = await fetch(GAS_URL, { method: "POST", body: formData });
       const json = await res.json();
       if (json.success) {
-        alert("✅ ส่งข้อมูลสำเร็จแล้ว");
+        showModal();
         e.target.reset();
         files = [];
         updateFileList();
-      } else {
-        alert("❌ ผิดพลาด: " + (json.error || "ไม่ทราบสาเหตุ"));
-      }
+} else {
+  alert("❌ ผิดพลาด: " + (json.error || "ไม่ทราบสาเหตุ"));
+}
+
     });
 
     async function testConnection() {
@@ -221,6 +240,24 @@
         adminDashboard.classList.add("hidden");
       }
     });
+
+    function showModal() {
+  document.getElementById("successModal").classList.remove("hidden");
+}
+
+function closeModal() {
+  document.getElementById("successModal").classList.add("hidden");
+}
+
+function logout() {
+  firebase.auth().signOut().then(() => {
+    alert("ออกจากระบบแล้ว");
+    location.reload();
+  }).catch(err => {
+    alert("เกิดข้อผิดพลาดในการออกจากระบบ: " + err.message);
+  });
+}
+
   </script>
 
 </body>
