@@ -3,194 +3,296 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SittiApp Upload</title>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <title>ระบบรับรองเวลาราชการ</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
-
-  <!-- Login -->
-  <div id="loginPage" class="w-full max-w-sm text-center">
-    <h1 class="text-2xl font-bold mb-4">เข้าสู่ระบบ</h1>
-    <button id="loginBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
-      Sign in with Google
-    </button>
-  </div>
-
-  <!-- Form Page -->
-  <div id="formPage" class="hidden w-full max-w-2xl bg-white p-6 rounded shadow">
-    <h2 class="text-xl font-semibold mb-4">ส่งข้อมูล</h2>
-    <form id="uploadForm" class="space-y-4">
-      <input type="text" name="CitizenID" placeholder="เลขประชาชน" required class="w-full border p-2 rounded" />
-      <input type="text" name="Name" placeholder="ชื่อ" required class="w-full border p-2 rounded" />
-      <input type="text" name="Surname" placeholder="นามสกุล" required class="w-full border p-2 rounded" />
-      <input type="text" name="Department" placeholder="สังกัด/หน่วยงาน" required class="w-full border p-2 rounded" />
-      <input type="text" name="BookNo" placeholder="เลขที่หนังสือ" required class="w-full border p-2 rounded" />
-      <input type="date" name="Date" required class="w-full border p-2 rounded" />
-      <textarea name="external" placeholder="หมายเหตุ" class="w-full border p-2 rounded"></textarea>
-
-      <div id="dropArea" class="border-2 border-dashed border-gray-300 p-4 rounded text-center bg-gray-50">
-        <p id="dropHint" class="text-gray-500">ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือก</p>
-        <input type="file" id="fileInput" class="hidden" multiple />
-        <ul id="fileList" class="text-left mt-2"></ul>
-      </div>
-
-      <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
-        ส่งข้อมูล
-      </button>
-    </form>
-  </div>
+<body class="bg-gray-100 min-h-screen">
 
   <!-- Admin Dashboard -->
-  <div id="adminDashboard" class="hidden w-full max-w-4xl bg-white p-6 rounded shadow">
-    <h2 class="text-xl font-bold mb-4">แดชบอร์ดผู้ดูแล</h2>
-    <table id="dataTable" class="table-auto w-full text-sm text-left border">
-      <thead>
-        <tr class="bg-gray-100">
-          <th class="p-2 border">ชื่อ</th>
-          <th class="p-2 border">สังกัด</th>
-          <th class="p-2 border">วันที่</th>
-          <th class="p-2 border">ไฟล์</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <!-- Modal -->
-  <div id="modal" class="fixed inset-0 bg-black bg-opacity-40 hidden justify-center items-center">
-    <div class="bg-white p-6 rounded shadow text-center">
-      <p class="text-xl font-semibold mb-4">🎉 ส่งข้อมูลเรียบร้อย</p>
-      <button onclick="closeModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">ปิด</button>
+  <div id="adminDashboard" class="hidden px-4 py-6">
+    <div class="max-w-6xl mx-auto bg-white shadow-lg rounded-2xl p-6">
+      <h2 class="text-2xl font-bold mb-4">📊 รายการเอกสารที่ส่งเข้ามา</h2>
+      <table class="w-full table-auto border text-sm">
+        <thead class="bg-gray-200 text-gray-700">
+          <tr>
+            <th class="p-2 border">เวลา</th>
+            <th class="p-2 border">ชื่อ-สกุล</th>
+            <th class="p-2 border">หน่วย</th>
+            <th class="p-2 border">เลขหนังสือ</th>
+            <th class="p-2 border">วันที่</th>
+            <th class="p-2 border">เอกสาร</th>
+            <th class="p-2 border">สถานะ</th>
+          </tr>
+        </thead>
+        <tbody id="adminTableBody" class="text-center"></tbody>
+      </table>
     </div>
   </div>
 
+  <!-- Login Page -->
+  <div id="loginPage" class="flex items-center justify-center h-screen">
+    <div class="bg-white shadow-lg rounded-2xl p-10 text-center w-full max-w-md">
+      <h1 class="text-2xl font-bold text-gray-700 mb-6">เข้าสู่ระบบ</h1>
+      <button onclick="signIn()" class="bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700 transition">เข้าสู่ระบบด้วยบัญชี Google</button>
+    </div>
+  </div>
+
+  <!-- Form Page -->
+  <div id="formPage" class="hidden px-4 py-6">
+    <div class="max-w-3xl mx-auto bg-white shadow-lg rounded-2xl p-8">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-semibold text-gray-800">ระบบรับรองเวลาราชการตอนเป็นทหาร</h2>
+        <span id="userEmail" class="text-sm text-gray-600"></span> 
+            
+      </div>
+      <form id="uploadForm" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <input type="text" name="CitizenID" required placeholder="เลขบัตรประชาชน" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400" />
+          <input type="text" name="Name" required placeholder="ชื่อ" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400" />
+          <input type="text" name="Surname" required placeholder="นามสกุล" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400" />
+          <input type="text" name="Department" placeholder="หน่วยงาน" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400" />
+          <input type="text" name="BookNo" placeholder="เลขหนังสือ" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400" />
+          <input type="date" name="Date" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400" />
+        </div>
+
+        <select name="external" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400">
+          <option value="false">📎 ใน กห.</option>
+          <option value="true">📎 นอก กห.</option>
+        </select>
+
+        <label class="block font-medium text-gray-700">แนบเอกสาร:</label>
+        <div id="dropzone" class="w-full border-2 border-dashed border-gray-400 p-6 text-center cursor-pointer rounded-lg">
+          <p class="text-gray-500">ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์</p>
+        </div>
+        <input type="file" id="fileInput" multiple hidden />
+        <ul id="fileList" class="text-sm text-gray-600 list-disc ml-6"></ul>
+
+        <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-xl hover:bg-green-700 transition">📤 ส่งข้อมูล</button>
+        <button onclick="testConnection(); return false;" class="text-xs underline text-blue-500">🧪 ทดสอบการเชื่อมต่อ GAS</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+<div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+  <div class="bg-white p-6 rounded-xl shadow-xl text-center space-y-4">
+    <p class="text-green-600 text-lg font-bold">✅ ส่งข้อมูลสำเร็จแล้ว</p>
+    <button onclick="closeModal()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">ปิด</button>
+  </div>
+</div>
+
+<!-- Logout Button (แสดงเมื่อ Login แล้ว) -->
+<div id="logoutSection" class="hidden fixed top-4 right-4 z-40">
+  <button onclick="logout()" class="bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700 transition">
+    🚪 ออกจากระบบ
+  </button>
+</div>
+
+
   <script>
-    // Firebase config
+    // === Firebase Config ===
     const firebaseConfig = {
       apiKey: "AIzaSyDjfV1qQGrkgivXX-5EYfvYHWxKrcFCT0M",
       authDomain: "sittiapp-f5c83.firebaseapp.com",
       projectId: "sittiapp-f5c83",
     };
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwO28F6Mkqsucpv-HEr5EkIOOHrc9jmY1B0gX59Q-lR_4TJo5CaYCp19d5KxOzLyw/exec";
+
     firebase.initializeApp(firebaseConfig);
 
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwO28F6Mkqsucpv-HEr5EkIOOHrc9jmY1B0gX59Q-lR_4TJo5CaYCp19d5KxOzLyw/exechttps://script.google.com/macros/s/xxxxxxxxxxxxxxxxxxxxxxxxxxx/exec";
-
-    const loginBtn = document.getElementById("loginBtn");
+    // === Elements ===
     const loginPage = document.getElementById("loginPage");
     const formPage = document.getElementById("formPage");
     const adminDashboard = document.getElementById("adminDashboard");
-    const uploadForm = document.getElementById("uploadForm");
+    const adminTableBody = document.getElementById("adminTableBody");
+    const userEmailDisplay = document.getElementById("userEmail");
+    const dropzone = document.getElementById("dropzone");
     const fileInput = document.getElementById("fileInput");
-    const dropArea = document.getElementById("dropArea");
     const fileList = document.getElementById("fileList");
-    const dropHint = document.getElementById("dropHint");
+    const uploadForm = document.getElementById("uploadForm");
+
+    let currentUser = null;
     let files = [];
 
-    const showModal = () => document.getElementById("modal").classList.remove("hidden");
-    const closeModal = () => document.getElementById("modal").classList.add("hidden");
-
+    const ADMINS = ["sitti.dop@gmail.com"]; // เปลี่ยนเป็นอีเมลแอดมินจริง
     function isAdmin(user) {
-      return user.email === "sitti.dop@gmail.com";
+      return user && ADMINS.includes(user.email);
     }
 
-    loginBtn.onclick = async () => {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      firebase.auth().signInWithPopup(provider);
-    };
+    function updateUIForUser(user) {
+  if (user) {
+    currentUser = user;
+    loginPage.classList.add("hidden");
+    formPage.classList.remove("hidden");
+    userEmailDisplay.textContent = `👤 ${user.email}`;
+  } else {
+    currentUser = null;
+    loginPage.classList.remove("hidden");
+    formPage.classList.add("hidden");
+    userEmailDisplay.textContent = "";
+  }
+  document.getElementById("logoutSection").classList.toggle("hidden", !user);
+}
 
-    firebase.auth().onAuthStateChanged(async (user) => {
-      if (!user) return;
 
-      loginPage.classList.add("hidden");
-      formPage.classList.remove("hidden");
-
-      if (isAdmin(user)) {
-        formPage.classList.add("hidden");
-        adminDashboard.classList.remove("hidden");
-        loadAdminDashboard(user);
+    async function signIn() {
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await firebase.auth().signInWithPopup(provider);
+      } catch (error) {
+        alert("เกิดข้อผิดพลาดในการเข้าสู่ระบบ: " + error.message);
       }
+    }
+
+    dropzone.addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", e => {
+      files = [...e.target.files];
+      updateFileList();
+    });
+    dropzone.addEventListener("dragover", e => {
+      e.preventDefault();
+      dropzone.classList.add("bg-blue-100");
+    });
+    dropzone.addEventListener("dragleave", () => dropzone.classList.remove("bg-blue-100"));
+    dropzone.addEventListener("drop", e => {
+      e.preventDefault();
+      dropzone.classList.remove("bg-blue-100");
+      files = [...e.dataTransfer.files];
+      updateFileList();
     });
 
     function updateFileList() {
       fileList.innerHTML = "";
-      dropHint.style.display = files.length ? "none" : "block";
-      files.forEach((f, i) => {
+      files.forEach(f => {
         const li = document.createElement("li");
-        li.textContent = `${i + 1}. ${f.name}`;
+        li.textContent = f.name;
         fileList.appendChild(li);
       });
     }
 
-    fileInput.addEventListener("change", e => {
-      const allowed = ["application/pdf", "image/png", "image/jpeg"];
-      files = [...e.target.files].filter(f => allowed.includes(f.type));
-      updateFileList();
-    });
-
-    dropArea.addEventListener("click", () => fileInput.click());
-    dropArea.addEventListener("dragover", e => {
+    uploadForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      dropArea.classList.add("bg-blue-100");
-    });
-    dropArea.addEventListener("dragleave", () => {
-      dropArea.classList.remove("bg-blue-100");
-    });
-    dropArea.addEventListener("drop", e => {
-      e.preventDefault();
-      const allowed = ["application/pdf", "image/png", "image/jpeg"];
-      files = [...e.dataTransfer.files].filter(f => allowed.includes(f.type));
-      updateFileList();
-    });
+      if (!currentUser) return alert("กรุณา Login ก่อน!");
 
-    uploadForm.addEventListener("submit", async e => {
-      e.preventDefault();
-      const user = firebase.auth().currentUser;
-      const idToken = await user.getIdToken();
-      const formData = new FormData(uploadForm);
+      const token = await currentUser.getIdToken();
+      const formData = new FormData(e.target);
+      formData.append("idToken", token);
+      files.forEach(file => formData.append("files[]", file));
 
-      formData.append("idToken", idToken);
-      files.forEach((f, i) => formData.append("file" + i, f));
-
-      const res = await fetch(GAS_URL, {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch(GAS_URL, { method: "POST", body: formData });
       const json = await res.json();
       if (json.success) {
         showModal();
-        uploadForm.reset();
+        e.target.reset();
         files = [];
         updateFileList();
-      } else {
-        alert("❌ ส่งไม่สำเร็จ: " + (json.error || "ไม่ทราบสาเหตุ"));
-      }
+} else {
+  alert("❌ ผิดพลาด: " + (json.error || "ไม่ทราบสาเหตุ"));
+}
+
     });
 
-    async function loadAdminDashboard(user) {
-      const idToken = await user.getIdToken();
-      const res = await fetch(`${GAS_URL}?mode=view&idToken=${idToken}`);
+    async function testConnection() {
+      try {
+        const res = await fetch(GAS_URL);
+        if (res.ok) {
+          alert("✅ เชื่อมต่อ GAS ได้เรียบร้อย");
+        } else {
+          alert("❌ ไม่สามารถเชื่อมต่อ GAS ได้ (status: " + res.status + ")");
+        }
+      } catch (err) {
+        alert("🚫 ข้อผิดพลาด: " + err.message);
+      }
+    }
+
+    async function loadAdminDashboard() {
+      const res = await fetch(`${GAS_URL}?mode=view`);
       const json = await res.json();
-      if (json.success) {
-        const tbody = document.querySelector("#dataTable tbody");
-        tbody.innerHTML = "";
+      if (json.success && Array.isArray(json.data)) {
+        adminTableBody.innerHTML = "";
         json.data.forEach(row => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
+            <td class="border p-2">${row.timestamp}</td>
             <td class="border p-2">${row.Name} ${row.Surname}</td>
             <td class="border p-2">${row.Department}</td>
+            <td class="border p-2">${row.BookNo}</td>
             <td class="border p-2">${row.Date}</td>
-            <td class="border p-2">
-              ${row.fileUrls.map((url, i) => `<a href="${url}" target="_blank" class="text-blue-500 underline">[ไฟล์ ${i + 1}]</a>`).join(" ")}
+            <td class="border p-2 space-y-1">
+              ${row.files.map(url => url ? `<a href="${url}" target="_blank" class="text-blue-600 underline block">ดู</a>` : "").join("")}
             </td>
-          `;
-          tbody.appendChild(tr);
+            <td class="border p-2">
+    <select data-email="${row.Email}" onchange="updateStatus(this)" class="text-sm border rounded px-2 py-1">
+      ${["รอตรวจสอบ", "กำลังดำเนินการ", "อนุมัติ", "เสร็จสิ้น"].map(status => `
+        <option value="${status}" ${row.status === status ? "selected" : ""}>${status}</option>
+      `).join("")}
+    </select>
+  </td>`;
+          adminTableBody.appendChild(tr);
         });
       } else {
-        alert("โหลดข้อมูลไม่สำเร็จ: " + (json.error || "ไม่ทราบสาเหตุ"));
+        alert("❌ โหลดข้อมูลไม่สำเร็จ");
       }
     }
+
+    firebase.auth().onAuthStateChanged(user => {
+      updateUIForUser(user);
+      if (isAdmin(user)) {
+        adminDashboard.classList.remove("hidden");
+        loadAdminDashboard();
+      } else {
+        adminDashboard.classList.add("hidden");
+      }
+    });
+
+    function showModal() {
+  document.getElementById("successModal").classList.remove("hidden");
+}
+
+function closeModal() {
+  document.getElementById("successModal").classList.add("hidden");
+}
+
+function logout() {
+  firebase.auth().signOut().then(() => {
+    alert("ออกจากระบบแล้ว");
+    location.reload();
+  }).catch(err => {
+    alert("เกิดข้อผิดพลาดในการออกจากระบบ: " + err.message);
+  });
+}
+
+async function updateStatus(selectEl) {
+  const newStatus = selectEl.value;
+  const userEmail = selectEl.dataset.email;
+
+  try {
+    const token = await currentUser.getIdToken();
+    const res = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "updateStatus",
+        email: userEmail,
+        status: newStatus,
+        idToken: token,
+      }),
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+    const json = await res.json();
+    if (!json.success) {
+      alert("❌ ไม่สามารถอัปเดตสถานะได้");
+    }
+  } catch (err) {
+    alert("⚠️ เกิดข้อผิดพลาด: " + err.message);
+  }
+}
+
+
   </script>
+
 </body>
 </html>
