@@ -1,298 +1,624 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ระบบรับรองเวลาราชการ</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-</head>
-<body class="bg-gray-100 min-h-screen">
-
-  <!-- Admin Dashboard -->
-  <div id="adminDashboard" class="hidden px-4 py-6">
-    <div class="max-w-6xl mx-auto bg-white shadow-lg rounded-2xl p-6">
-      <h2 class="text-2xl font-bold mb-4">📊 รายการเอกสารที่ส่งเข้ามา</h2>
-      <table class="w-full table-auto border text-sm">
-        <thead class="bg-gray-200 text-gray-700">
-          <tr>
-            <th class="p-2 border">เวลา</th>
-            <th class="p-2 border">ชื่อ-สกุล</th>
-            <th class="p-2 border">หน่วย</th>
-            <th class="p-2 border">เลขหนังสือ</th>
-            <th class="p-2 border">วันที่</th>
-            <th class="p-2 border">เอกสาร</th>
-            <th class="p-2 border">สถานะ</th>
-          </tr>
-        </thead>
-        <tbody id="adminTableBody" class="text-center"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Login Page -->
-  <div id="loginPage" class="flex items-center justify-center h-screen">
-    <div class="bg-white shadow-lg rounded-2xl p-10 text-center w-full max-w-md">
-      <h1 class="text-2xl font-bold text-gray-700 mb-6">เข้าสู่ระบบ</h1>
-      <button onclick="signIn()" class="bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700 transition">เข้าสู่ระบบด้วยบัญชี Google</button>
-    </div>
-  </div>
-
-  <!-- Form Page -->
-  <div id="formPage" class="hidden px-4 py-6">
-    <div class="max-w-3xl mx-auto bg-white shadow-lg rounded-2xl p-8">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-semibold text-gray-800">ระบบรับรองเวลาราชการตอนเป็นทหาร</h2>
-        <span id="userEmail" class="text-sm text-gray-600"></span> 
-            
-      </div>
-      <form id="uploadForm" class="space-y-4">
-        <div class="grid grid-cols-2 gap-4">
-          <input type="text" name="CitizenID" required placeholder="เลขบัตรประชาชน" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400" />
-          <input type="text" name="Name" required placeholder="ชื่อ" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400" />
-          <input type="text" name="Surname" required placeholder="นามสกุล" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400" />
-          <input type="text" name="Department" placeholder="หน่วยงาน" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400" />
-          <input type="text" name="BookNo" placeholder="เลขหนังสือ" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400" />
-          <input type="date" name="Date" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400" />
-        </div>
-
-        <select name="external" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-400">
-          <option value="false">📎 ใน กห.</option>
-          <option value="true">📎 นอก กห.</option>
-        </select>
-
-        <label class="block font-medium text-gray-700">แนบเอกสาร:</label>
-        <div id="dropzone" class="w-full border-2 border-dashed border-gray-400 p-6 text-center cursor-pointer rounded-lg">
-          <p class="text-gray-500">ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์</p>
-        </div>
-        <input type="file" id="fileInput" multiple hidden />
-        <ul id="fileList" class="text-sm text-gray-600 list-disc ml-6"></ul>
-
-        <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-xl hover:bg-green-700 transition">📤 ส่งข้อมูล</button>
-        <button onclick="testConnection(); return false;" class="text-xs underline text-blue-500">🧪 ทดสอบการเชื่อมต่อ GAS</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Success Modal -->
-<div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
-  <div class="bg-white p-6 rounded-xl shadow-xl text-center space-y-4">
-    <p class="text-green-600 text-lg font-bold">✅ ส่งข้อมูลสำเร็จแล้ว</p>
-    <button onclick="closeModal()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">ปิด</button>
-  </div>
-</div>
-
-<!-- Logout Button (แสดงเมื่อ Login แล้ว) -->
-<div id="logoutSection" class="hidden fixed top-4 right-4 z-40">
-  <button onclick="logout()" class="bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700 transition">
-    🚪 ออกจากระบบ
-  </button>
-</div>
-
-
-  <script>
-    // === Firebase Config ===
-    const firebaseConfig = {
-      apiKey: "AIzaSyDjfV1qQGrkgivXX-5EYfvYHWxKrcFCT0M",
-      authDomain: "sittiapp-f5c83.firebaseapp.com",
-      projectId: "sittiapp-f5c83",
-    };
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwO28F6Mkqsucpv-HEr5EkIOOHrc9jmY1B0gX59Q-lR_4TJo5CaYCp19d5KxOzLyw/exec";
-
-    firebase.initializeApp(firebaseConfig);
-
-    // === Elements ===
-    const loginPage = document.getElementById("loginPage");
-    const formPage = document.getElementById("formPage");
-    const adminDashboard = document.getElementById("adminDashboard");
-    const adminTableBody = document.getElementById("adminTableBody");
-    const userEmailDisplay = document.getElementById("userEmail");
-    const dropzone = document.getElementById("dropzone");
-    const fileInput = document.getElementById("fileInput");
-    const fileList = document.getElementById("fileList");
-    const uploadForm = document.getElementById("uploadForm");
-
-    let currentUser = null;
-    let files = [];
-
-    const ADMINS = ["sitti.dop@gmail.com"]; // เปลี่ยนเป็นอีเมลแอดมินจริง
-    function isAdmin(user) {
-      return user && ADMINS.includes(user.email);
-    }
-
-    function updateUIForUser(user) {
-  if (user) {
-    currentUser = user;
-    loginPage.classList.add("hidden");
-    formPage.classList.remove("hidden");
-    userEmailDisplay.textContent = `👤 ${user.email}`;
-  } else {
-    currentUser = null;
-    loginPage.classList.remove("hidden");
-    formPage.classList.add("hidden");
-    userEmailDisplay.textContent = "";
-  }
-  document.getElementById("logoutSection").classList.toggle("hidden", !user);
-}
-
-
-    async function signIn() {
-      try {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        await firebase.auth().signInWithPopup(provider);
-      } catch (error) {
-        alert("เกิดข้อผิดพลาดในการเข้าสู่ระบบ: " + error.message);
-      }
-    }
-
-    dropzone.addEventListener("click", () => fileInput.click());
-    fileInput.addEventListener("change", e => {
-      files = [...e.target.files];
-      updateFileList();
-    });
-    dropzone.addEventListener("dragover", e => {
-      e.preventDefault();
-      dropzone.classList.add("bg-blue-100");
-    });
-    dropzone.addEventListener("dragleave", () => dropzone.classList.remove("bg-blue-100"));
-    dropzone.addEventListener("drop", e => {
-      e.preventDefault();
-      dropzone.classList.remove("bg-blue-100");
-      files = [...e.dataTransfer.files];
-      updateFileList();
-    });
-
-    function updateFileList() {
-      fileList.innerHTML = "";
-      files.forEach(f => {
-        const li = document.createElement("li");
-        li.textContent = f.name;
-        fileList.appendChild(li);
-      });
-    }
-
-    uploadForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      if (!currentUser) return alert("กรุณา Login ก่อน!");
-
-      const token = await currentUser.getIdToken();
-      const formData = new FormData(e.target);
-      formData.append("idToken", token);
-      files.forEach(file => formData.append("files[]", file));
-
-      const res = await fetch(GAS_URL, { method: "POST", body: formData });
-      const json = await res.json();
-      if (json.success) {
-        showModal();
-        e.target.reset();
-        files = [];
-        updateFileList();
-} else {
-  alert("❌ ผิดพลาด: " + (json.error || "ไม่ทราบสาเหตุ"));
-}
-
-    });
-
-    async function testConnection() {
-      try {
-        const res = await fetch(GAS_URL);
-        if (res.ok) {
-          alert("✅ เชื่อมต่อ GAS ได้เรียบร้อย");
-        } else {
-          alert("❌ ไม่สามารถเชื่อมต่อ GAS ได้ (status: " + res.status + ")");
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบรับรองเวลาราชการ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
         }
-      } catch (err) {
-        alert("🚫 ข้อผิดพลาด: " + err.message);
-      }
-    }
+        .form-input {
+            @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500;
+        }
+        .btn {
+            @apply px-4 py-2 rounded-md font-semibold text-white transition-colors duration-300;
+        }
+        .btn-primary {
+            @apply bg-blue-600 hover:bg-blue-700;
+        }
+        .btn-secondary {
+            @apply bg-green-600 hover:bg-green-700;
+        }
+        .btn-danger {
+            @apply bg-red-600 hover:bg-red-700;
+        }
+        .btn-warning {
+            @apply bg-orange-500 hover:bg-orange-600;
+        }
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
 
-    async function loadAdminDashboard() {
-      const res = await fetch(`${GAS_URL}?mode=view`);
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
-        adminTableBody.innerHTML = "";
-        json.data.forEach(row => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td class="border p-2">${row.timestamp}</td>
-            <td class="border p-2">${row.Name} ${row.Surname}</td>
-            <td class="border p-2">${row.Department}</td>
-            <td class="border p-2">${row.BookNo}</td>
-            <td class="border p-2">${row.Date}</td>
-            <td class="border p-2 space-y-1">
-              ${row.files.map(url => url ? `<a href="${url}" target="_blank" class="text-blue-600 underline block">ดู</a>` : "").join("")}
-            </td>
-            <td class="border p-2">
-    <select data-email="${row.Email}" onchange="updateStatus(this)" class="text-sm border rounded px-2 py-1">
-      ${["รอตรวจสอบ", "กำลังดำเนินการ", "อนุมัติ", "เสร็จสิ้น"].map(status => `
-        <option value="${status}" ${row.status === status ? "selected" : ""}>${status}</option>
-      `).join("")}
-    </select>
-  </td>`;
-          adminTableBody.appendChild(tr);
+    <!-- Loading Spinner -->
+    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+        <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-white"></div>
+    </div>
+
+    <!-- Auth Section -->
+    <div id="auth-section" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-green-100 to-orange-100 p-4">
+        <div class="w-full max-w-md bg-white rounded-xl shadow-2xl p-8">
+            <!-- Login Form -->
+            <div id="login-form">
+                <h2 class="text-3xl font-bold text-center text-blue-800 mb-2">เข้าสู่ระบบ</h2>
+                <p class="text-center text-gray-500 mb-6">ระบบรับรองเวลาราชการ</p>
+                <div id="login-error" class="text-red-500 text-sm mb-4 hidden"></div>
+                <form id="login">
+                    <div class="mb-4">
+                        <label for="login-email" class="block text-gray-700 mb-1">อีเมล</label>
+                        <input type="email" id="login-email" class="form-input" required>
+                    </div>
+                    <div class="mb-6">
+                        <label for="login-password" class="block text-gray-700 mb-1">รหัสผ่าน</label>
+                        <input type="password" id="login-password" class="form-input" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full">เข้าสู่ระบบ</button>
+                </form>
+                <div class="text-center mt-4">
+                    <a href="#" id="forgot-password-link" class="text-sm text-blue-600 hover:underline">ลืมรหัสผ่าน?</a>
+                </div>
+                <div class="text-center mt-2">
+                    <span class="text-sm text-gray-600">ยังไม่มีบัญชี? </span>
+                    <a href="#" id="show-register-link" class="text-sm text-green-600 hover:underline font-semibold">ลงทะเบียนที่นี่</a>
+                </div>
+            </div>
+            <!-- Register Form -->
+            <div id="register-form" class="hidden">
+                <h2 class="text-3xl font-bold text-center text-green-800 mb-2">ลงทะเบียน</h2>
+                <p class="text-center text-gray-500 mb-6">สร้างบัญชีเพื่อใช้งาน</p>
+                <div id="register-error" class="text-red-500 text-sm mb-4 hidden"></div>
+                <form id="register">
+                    <div class="mb-4">
+                        <label for="register-email" class="block text-gray-700 mb-1">อีเมล</label>
+                        <input type="email" id="register-email" class="form-input" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="register-password" class="block text-gray-700 mb-1">รหัสผ่าน</label>
+                        <input type="password" id="register-password" class="form-input" required>
+                    </div>
+                    <div class="mb-6">
+                        <label for="confirm-password" class="block text-gray-700 mb-1">ยืนยันรหัสผ่าน</label>
+                        <input type="password" id="confirm-password" class="form-input" required>
+                    </div>
+                    <button type="submit" class="btn btn-secondary w-full">ลงทะเบียน</button>
+                </form>
+                <div class="text-center mt-4">
+                    <span class="text-sm text-gray-600">มีบัญชีอยู่แล้ว? </span>
+                    <a href="#" id="show-login-link" class="text-sm text-blue-600 hover:underline font-semibold">เข้าสู่ระบบที่นี่</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Section -->
+    <div id="app-section" class="hidden">
+        <div class="flex h-screen bg-gray-200">
+            <!-- Sidebar -->
+            <div class="w-64 bg-white shadow-lg flex flex-col no-scrollbar">
+                <div class="bg-gradient-to-r from-blue-600 to-green-500 p-4 flex items-center space-x-3">
+                    <i class="fas fa-shield-halved text-white text-3xl"></i>
+                    <h1 class="text-white text-xl font-bold">ทบ. รับรองเวลา</h1>
+                </div>
+                <nav class="flex-1 px-2 py-4 space-y-2">
+                    <a href="#" id="nav-form" class="flex items-center px-4 py-2 text-gray-700 rounded-md hover:bg-orange-100 hover:text-orange-600">
+                        <i class="fas fa-file-alt w-6 text-center"></i><span class="mx-4">ยื่นเรื่อง/ส่งเอกสาร</span>
+                    </a>
+                    <a href="#" id="nav-status" class="flex items-center px-4 py-2 text-gray-700 rounded-md hover:bg-orange-100 hover:text-orange-600">
+                        <i class="fas fa-tasks w-6 text-center"></i><span class="mx-4">ติดตามสถานะ</span>
+                    </a>
+                    <a href="#" id="nav-admin" class="hidden flex items-center px-4 py-2 text-gray-700 rounded-md hover:bg-orange-100 hover:text-orange-600">
+                        <i class="fas fa-user-shield w-6 text-center"></i><span class="mx-4">จัดการเอกสาร (Admin)</span>
+                    </a>
+                </nav>
+                <div class="p-4 border-t border-gray-200">
+                    <div id="user-info" class="text-sm text-gray-600 mb-2 truncate"></div>
+                    <button id="logout-btn" class="btn btn-danger w-full text-sm">
+                        <i class="fas fa-sign-out-alt"></i> ออกจากระบบ
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <main class="flex-1 p-6 overflow-y-auto">
+                <!-- Page: Form Submission -->
+                <div id="page-form" class="page">
+                    <h2 class="text-2xl font-bold mb-6 text-gray-800">แบบฟอร์มขอหนังสือรับรองเวลาราชการ</h2>
+                    <div class="bg-white p-8 rounded-lg shadow-md">
+                        <form id="data-form">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="md:col-span-2">
+                                    <label for="id-card" class="block text-gray-700 font-medium mb-1">เลขบัตรประจำตัวประชาชน</label>
+                                    <input type="text" id="id-card" name="id-card" class="form-input" pattern="\d{13}" title="กรุณากรอกเลขบัตรประชาชน 13 หลัก" required>
+                                </div>
+                                <div>
+                                    <label for="title-name" class="block text-gray-700 font-medium mb-1">คำนำหน้าชื่อ</label>
+                                    <input type="text" id="title-name" name="title-name" class="form-input" required>
+                                </div>
+                                <div>
+                                    <label for="first-name" class="block text-gray-700 font-medium mb-1">ชื่อ</label>
+                                    <input type="text" id="first-name" name="first-name" class="form-input" required>
+                                </div>
+                                <div>
+                                    <label for="last-name" class="block text-gray-700 font-medium mb-1">นามสกุล</label>
+                                    <input type="text" id="last-name" name="last-name" class="form-input" required>
+                                </div>
+                                <div>
+                                    <label for="agency" class="block text-gray-700 font-medium mb-1">หน่วยงาน</label>
+                                    <input type="text" id="agency" name="agency" class="form-input" required>
+                                </div>
+                                <div>
+                                    <label for="doc-number" class="block text-gray-700 font-medium mb-1">เลขที่หนังสือ</label>
+                                    <input type="text" id="doc-number" name="doc-number" class="form-input" required>
+                                </div>
+                                <div>
+                                    <label for="doc-date" class="block text-gray-700 font-medium mb-1">วันที่หนังสือ</label>
+                                    <input type="date" id="doc-date" name="doc-date" class="form-input" required>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label for="doc-type" class="block text-gray-700 font-medium mb-1">ประเภท</label>
+                                    <select id="doc-type" name="doc-type" class="form-input" required>
+                                        <option value="ใน กห.">ใน กห.</option>
+                                        <option value="นอก กห.">นอก กห.</option>
+                                    </select>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label for="file-upload" class="block text-gray-700 font-medium mb-1">อัพโหลดไฟล์แนบ (.png, .jpg, .pdf)</label>
+                                    <input type="file" id="file-upload" name="file-upload" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" multiple required>
+                                    <div id="file-list" class="mt-2 text-sm text-gray-600"></div>
+                                </div>
+                            </div>
+                            <div class="mt-8 text-right">
+                                <button type="submit" class="btn btn-secondary w-full md:w-auto">
+                                    <i class="fas fa-paper-plane"></i> ส่งข้อมูล
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Page: Status Tracking -->
+                <div id="page-status" class="page hidden">
+                    <h2 class="text-2xl font-bold mb-6 text-gray-800">ติดตามสถานะเอกสาร</h2>
+                    <div class="bg-white p-4 rounded-lg shadow-md">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left text-gray-500">
+                                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3">วันที่ยื่นเรื่อง</th>
+                                        <th scope="col" class="px-6 py-3">เลขที่หนังสือ</th>
+                                        <th scope="col" class="px-6 py-3">ประเภท</th>
+                                        <th scope="col" class="px-6 py-3">สถานะ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="user-status-table">
+                                    <!-- Rows will be inserted here by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Page: Admin -->
+                <div id="page-admin" class="page hidden">
+                    <h2 class="text-2xl font-bold mb-6 text-gray-800">จัดการเอกสาร (Admin)</h2>
+                    <div class="bg-white p-4 rounded-lg shadow-md">
+                         <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left text-gray-500">
+                                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3">วันที่ยื่น</th>
+                                        <th scope="col" class="px-6 py-3">ผู้ยื่น (อีเมล)</th>
+                                        <th scope="col" class="px-6 py-3">ชื่อ-สกุล</th>
+                                        <th scope="col" class="px-6 py-3">เลขที่หนังสือ</th>
+                                        <th scope="col" class="px-6 py-3">ไฟล์แนบ</th>
+                                        <th scope="col" class="px-6 py-3">สถานะ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-table">
+                                    <!-- Rows will be inserted here by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
+        import { 
+            getAuth, 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword, 
+            signOut, 
+            onAuthStateChanged,
+            sendPasswordResetEmail
+        } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            query, 
+            where, 
+            onSnapshot,
+            doc,
+            updateDoc,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDjfV1qQGrkgivXX-5EYfvYHWxKrcFCT0M",
+            authDomain: "sittiapp-f5c83.firebaseapp.com",
+            projectId: "sittiapp-f5c83",
+            storageBucket: "sittiapp-f5c83.firebasestorage.app",
+            messagingSenderId: "90446484859",
+            appId: "1:90446484859:web:40e72a8a010164c2ee19de",
+            measurementId: "G-6W98KJKY35"
+        };
+        
+        // Google Apps Script URL
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwIjV30KIyhLVhnzUMVzbwpJv9MX74Ocjl2TourY3qjHeNLZ4BQL2rk01CXg-RsrCM/exec";
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // DOM Elements
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const authSection = document.getElementById('auth-section');
+        const appSection = document.getElementById('app-section');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const showRegisterLink = document.getElementById('show-register-link');
+        const showLoginLink = document.getElementById('show-login-link');
+        const forgotPasswordLink = document.getElementById('forgot-password-link');
+        const loginError = document.getElementById('login-error');
+        const registerError = document.getElementById('register-error');
+        
+        const pages = document.querySelectorAll('.page');
+        const navLinks = {
+            form: document.getElementById('nav-form'),
+            status: document.getElementById('nav-status'),
+            admin: document.getElementById('nav-admin')
+        };
+        const userInfo = document.getElementById('user-info');
+        const logoutBtn = document.getElementById('logout-btn');
+        const dataForm = document.getElementById('data-form');
+        const fileUpload = document.getElementById('file-upload');
+        const fileList = document.getElementById('file-list');
+
+        let currentUser = null;
+
+        // --- UTILITY FUNCTIONS ---
+        const showLoading = (show) => {
+            loadingOverlay.classList.toggle('hidden', !show);
+        };
+
+        const showPage = (pageId) => {
+            pages.forEach(page => page.classList.add('hidden'));
+            document.getElementById(`page-${pageId}`).classList.remove('hidden');
+            
+            Object.values(navLinks).forEach(link => link.classList.remove('bg-orange-100', 'text-orange-600', 'font-bold'));
+            if (navLinks[pageId]) {
+                navLinks[pageId].classList.add('bg-orange-100', 'text-orange-600', 'font-bold');
+            }
+        };
+
+        const showAlert = (message, type = 'error') => {
+            alert(message); // Simple alert, can be replaced with a custom modal
+        };
+
+        // --- AUTHENTICATION ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                authSection.classList.add('hidden');
+                appSection.classList.remove('hidden');
+                userInfo.textContent = `ผู้ใช้: ${user.email}`;
+                
+                // Check for Admin
+                if (user.email.toLowerCase() === 'sitti.dop@gmail.com') {
+                    navLinks.admin.classList.remove('hidden');
+                    loadAdminData();
+                    showPage('admin');
+                } else {
+                    navLinks.admin.classList.add('hidden');
+                    loadUserData(user.email);
+                    showPage('form');
+                }
+                loadUserData(user.email); // Also load user status data
+            } else {
+                currentUser = null;
+                authSection.classList.remove('hidden');
+                appSection.classList.add('hidden');
+                loginForm.reset();
+                registerForm.reset();
+            }
         });
-      } else {
-        alert("❌ โหลดข้อมูลไม่สำเร็จ");
-      }
-    }
 
-    firebase.auth().onAuthStateChanged(user => {
-      updateUIForUser(user);
-      if (isAdmin(user)) {
-        adminDashboard.classList.remove("hidden");
-        loadAdminDashboard();
-      } else {
-        adminDashboard.classList.add("hidden");
-      }
-    });
+        document.getElementById('login').addEventListener('submit', (e) => {
+            e.preventDefault();
+            showLoading(true);
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            signInWithEmailAndPassword(auth, email, password)
+                .catch(error => {
+                    loginError.textContent = "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
+                    loginError.classList.remove('hidden');
+                })
+                .finally(() => showLoading(false));
+        });
 
-    function showModal() {
-  document.getElementById("successModal").classList.remove("hidden");
-}
+        document.getElementById('register').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
 
-function closeModal() {
-  document.getElementById("successModal").classList.add("hidden");
-}
+            if (password !== confirmPassword) {
+                registerError.textContent = "รหัสผ่านไม่ตรงกัน";
+                registerError.classList.remove('hidden');
+                return;
+            }
+            showLoading(true);
+            createUserWithEmailAndPassword(auth, email, password)
+                .then(() => {
+                    registerForm.reset();
+                    showAlert('ลงทะเบียนสำเร็จแล้ว! กรุณาเข้าสู่ระบบ', 'success');
+                    registerForm.classList.add('hidden');
+                    loginForm.classList.remove('hidden');
+                })
+                .catch(error => {
+                    registerError.textContent = "ไม่สามารถลงทะเบียนได้: " + error.message;
+                    registerError.classList.remove('hidden');
+                })
+                .finally(() => showLoading(false));
+        });
 
-function logout() {
-  firebase.auth().signOut().then(() => {
-    alert("ออกจากระบบแล้ว");
-    location.reload();
-  }).catch(err => {
-    alert("เกิดข้อผิดพลาดในการออกจากระบบ: " + err.message);
-  });
-}
+        logoutBtn.addEventListener('click', () => {
+            signOut(auth);
+        });
 
-async function updateStatus(selectEl) {
-  const newStatus = selectEl.value;
-  const userEmail = selectEl.dataset.email;
+        forgotPasswordLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            const email = prompt("กรุณากรอกอีเมลของคุณเพื่อรีเซ็ตรหัสผ่าน:");
+            if (email) {
+                sendPasswordResetEmail(auth, email)
+                    .then(() => {
+                        showAlert('ลิงก์สำหรับรีเซ็ตรหัสผ่านได้ถูกส่งไปยังอีเมลของคุณแล้ว', 'success');
+                    })
+                    .catch((error) => {
+                        showAlert('ไม่สามารถส่งอีเมลรีเซ็ตรหัสผ่านได้: ' + error.message);
+                    });
+            }
+        });
 
-  try {
-    const token = await currentUser.getIdToken();
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "updateStatus",
-        email: userEmail,
-        status: newStatus,
-        idToken: token,
-      }),
-      headers: {
-        "Content-Type": "application/json"
-      }
-    });
-    const json = await res.json();
-    if (!json.success) {
-      alert("❌ ไม่สามารถอัปเดตสถานะได้");
-    }
-  } catch (err) {
-    alert("⚠️ เกิดข้อผิดพลาด: " + err.message);
-  }
-}
+        showRegisterLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginForm.classList.add('hidden');
+            registerForm.classList.remove('hidden');
+            loginError.classList.add('hidden');
+        });
 
+        showLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            registerForm.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+            registerError.classList.add('hidden');
+        });
 
-  </script>
+        // --- NAVIGATION ---
+        navLinks.form.addEventListener('click', (e) => { e.preventDefault(); showPage('form'); });
+        navLinks.status.addEventListener('click', (e) => { e.preventDefault(); showPage('status'); });
+        navLinks.admin.addEventListener('click', (e) => { e.preventDefault(); showPage('admin'); });
 
+        // --- FORM SUBMISSION ---
+        fileUpload.addEventListener('change', () => {
+            fileList.innerHTML = '';
+            if (fileUpload.files.length > 0) {
+                let filesText = Array.from(fileUpload.files).map(f => f.name).join(', ');
+                fileList.textContent = `ไฟล์ที่เลือก: ${filesText}`;
+            }
+        });
+
+        dataForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) {
+                showAlert('กรุณาเข้าสู่ระบบก่อนส่งข้อมูล');
+                return;
+            }
+            showLoading(true);
+
+            const formData = new FormData(dataForm);
+            const data = Object.fromEntries(formData.entries());
+
+            try {
+                // 1. Add to Firestore first to get a document ID and manage status
+                const docRef = await addDoc(collection(db, "requests"), {
+                    userEmail: currentUser.email,
+                    idCard: data['id-card'],
+                    titleName: data['title-name'],
+                    firstName: data['first-name'],
+                    lastName: data['last-name'],
+                    agency: data.agency,
+                    docNumber: data['doc-number'],
+                    docDate: data['doc-date'],
+                    docType: data['doc-type'],
+                    status: "ยื่นเรื่องแล้ว", // Initial status
+                    createdAt: serverTimestamp(),
+                    fileUrls: [] // Will be updated later if needed
+                });
+
+                // 2. Convert files to Base64
+                const files = fileUpload.files;
+                const filePromises = Array.from(files).map(file => {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve({
+                            base64: reader.result,
+                            name: file.name,
+                            type: file.type
+                        });
+                        reader.onerror = error => reject(error);
+                        reader.readAsDataURL(file);
+                    });
+                });
+                const fileData = await Promise.all(filePromises);
+
+                // 3. Send data and files to Google Apps Script
+                const payload = {
+                    ...data,
+                    files: fileData,
+                    firestoreId: docRef.id,
+                    userEmail: currentUser.email
+                };
+
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    // Optionally update Firestore with Drive URLs
+                    await updateDoc(doc(db, "requests", docRef.id), {
+                        fileUrls: result.fileUrls
+                    });
+                    showAlert('ส่งข้อมูลสำเร็จ!', 'success');
+                    dataForm.reset();
+                    fileList.innerHTML = '';
+                    showPage('status');
+                } else {
+                    throw new Error(result.message || 'เกิดข้อผิดพลาดในการส่งข้อมูล');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert(`เกิดข้อผิดพลาด: ${error.message}`);
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        // --- DATA DISPLAY & STATUS MANAGEMENT ---
+        const getStatusBadge = (status) => {
+            switch (status) {
+                case 'ยื่นเรื่องแล้ว': return `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">${status}</span>`;
+                case 'กำลังดำเนินการ': return `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">${status}</span>`;
+                case 'รออนุมัติ': return `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">${status}</span>`;
+                case 'เสร็จสิ้น': return `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">${status}</span>`;
+                case 'ปฏิเสธ': return `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">${status}</span>`;
+                default: return `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">${status}</span>`;
+            }
+        };
+        
+        const formatDate = (timestamp) => {
+            if (!timestamp) return 'N/A';
+            return new Date(timestamp.seconds * 1000).toLocaleDateString('th-TH', {
+                year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+        };
+
+        function loadUserData(email) {
+            const q = query(collection(db, "requests"), where("userEmail", "==", email));
+            onSnapshot(q, (querySnapshot) => {
+                const tableBody = document.getElementById('user-status-table');
+                tableBody.innerHTML = '';
+                if (querySnapshot.empty) {
+                    tableBody.innerHTML = `<tr><td colspan="4" class="text-center p-4">ไม่พบข้อมูลการยื่นเรื่อง</td></tr>`;
+                    return;
+                }
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const row = `
+                        <tr class="bg-white border-b">
+                            <td class="px-6 py-4">${formatDate(data.createdAt)}</td>
+                            <td class="px-6 py-4">${data.docNumber}</td>
+                            <td class="px-6 py-4">${data.docType}</td>
+                            <td class="px-6 py-4">${getStatusBadge(data.status)}</td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            });
+        }
+
+        function loadAdminData() {
+            const q = query(collection(db, "requests"));
+            onSnapshot(q, (querySnapshot) => {
+                const tableBody = document.getElementById('admin-table');
+                tableBody.innerHTML = '';
+                 if (querySnapshot.empty) {
+                    tableBody.innerHTML = `<tr><td colspan="6" class="text-center p-4">ไม่พบข้อมูลการยื่นเรื่อง</td></tr>`;
+                    return;
+                }
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const fileLinks = (data.fileUrls && data.fileUrls.length > 0)
+                        ? data.fileUrls.map((url, index) => `<a href="${url}" target="_blank" class="text-blue-600 hover:underline">ไฟล์ ${index+1}</a>`).join('<br>')
+                        : 'ไม่มีไฟล์';
+
+                    const row = `
+                        <tr class="bg-white border-b">
+                            <td class="px-6 py-4">${formatDate(data.createdAt)}</td>
+                            <td class="px-6 py-4 truncate max-w-xs">${data.userEmail}</td>
+                            <td class="px-6 py-4">${data.titleName}${data.firstName} ${data.lastName}</td>
+                            <td class="px-6 py-4">${data.docNumber}</td>
+                            <td class="px-6 py-4">${fileLinks}</td>
+                            <td class="px-6 py-4">
+                                <select class="status-select form-input text-xs p-1" data-id="${doc.id}">
+                                    <option value="ยื่นเรื่องแล้ว" ${data.status === 'ยื่นเรื่องแล้ว' ? 'selected' : ''}>ยื่นเรื่องแล้ว</option>
+                                    <option value="กำลังดำเนินการ" ${data.status === 'กำลังดำเนินการ' ? 'selected' : ''}>กำลังดำเนินการ</option>
+                                    <option value="รออนุมัติ" ${data.status === 'รออนุมัติ' ? 'selected' : ''}>รออนุมัติ</option>
+                                    <option value="เสร็จสิ้น" ${data.status === 'เสร็จสิ้น' ? 'selected' : ''}>เสร็จสิ้น</option>
+                                    <option value="ปฏิเสธ" ${data.status === 'ปฏิเสธ' ? 'selected' : ''}>ปฏิเสธ</option>
+                                </select>
+                            </td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            });
+        }
+        
+        // Event delegation for status change
+        document.getElementById('admin-table').addEventListener('change', async (e) => {
+            if (e.target.classList.contains('status-select')) {
+                const docId = e.target.dataset.id;
+                const newStatus = e.target.value;
+                showLoading(true);
+                try {
+                    const docRef = doc(db, "requests", docId);
+                    await updateDoc(docRef, { status: newStatus });
+                    showAlert('อัปเดตสถานะสำเร็จ', 'success');
+                } catch (error) {
+                    console.error("Error updating status: ", error);
+                    showAlert('เกิดข้อผิดพลาดในการอัปเดตสถานะ');
+                } finally {
+                    showLoading(false);
+                }
+            }
+        });
+
+    </script>
 </body>
 </html>
