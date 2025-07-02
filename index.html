@@ -340,10 +340,10 @@
                     showPage('admin');
                 } else {
                     navLinks.admin.classList.add('hidden');
-                    loadUserData(user.email);
+                    loadUserData(user.uid); // Load data based on UID
                     showPage('form');
                 }
-                loadUserData(user.email); // Also load user status data
+                loadUserData(user.uid); // Also load user status data based on UID
             } else {
                 currentUser = null;
                 authSection.classList.remove('hidden');
@@ -452,6 +452,7 @@
             try {
                 // 1. Add to Firestore first to get a document ID and manage status
                 const docRef = await addDoc(collection(db, "requests"), {
+                    authUid: currentUser.uid, // *** ADDED THIS LINE ***
                     userEmail: currentUser.email,
                     idCard: data['id-card'],
                     titleName: data['title-name'],
@@ -499,7 +500,7 @@
                 const result = await response.json();
 
                 if (result.status === 'success') {
-                    // Optionally update Firestore with Drive URLs
+                    // 4. Update Firestore with Drive URLs
                     await updateDoc(doc(db, "requests", docRef.id), {
                         fileUrls: result.fileUrls
                     });
@@ -508,12 +509,17 @@
                     fileList.innerHTML = '';
                     showPage('status');
                 } else {
-                    throw new Error(result.message || 'เกิดข้อผิดพลาดในการส่งข้อมูล');
+                    throw new Error(result.message || 'เกิดข้อผิดพลาดในการส่งข้อมูลไปยัง Google Script');
                 }
 
             } catch (error) {
                 console.error('Error:', error);
-                showAlert(`เกิดข้อผิดพลาด: ${error.message}`);
+                // *** IMPROVED ERROR MESSAGE ***
+                if (error.code === 'permission-denied') {
+                     showAlert('เกิดข้อผิดพลาด: ไม่มีสิทธิ์ในการเขียนข้อมูล! กรุณาตรวจสอบ Firestore Security Rules');
+                } else {
+                     showAlert(`เกิดข้อผิดพลาด: ${error.message}`);
+                }
             } finally {
                 showLoading(false);
             }
@@ -538,8 +544,8 @@
             });
         };
 
-        function loadUserData(email) {
-            const q = query(collection(db, "requests"), where("userEmail", "==", email));
+        function loadUserData(uid) { // *** CHANGED to uid ***
+            const q = query(collection(db, "requests"), where("authUid", "==", uid)); // *** CHANGED to authUid ***
             onSnapshot(q, (querySnapshot) => {
                 const tableBody = document.getElementById('user-status-table');
                 tableBody.innerHTML = '';
@@ -622,3 +628,45 @@
     </script>
 </body>
 </html>
+```
+
+### ขั้นตอนที่ 2: อัปเดต Firestore Security Rules
+
+นี่คือส่วนที่สำคัญที่สุดครับ ให้คุณไปที่ **Firebase Console** ของโปรเจกต์คุณ
+1.  ไปที่เมนู **Firestore Database**
+2.  คลิกที่แท็บ **Rules** (กฎ)
+3.  ลบกฎเดิมทั้งหมดทิ้ง แล้วนำกฎชุดใหม่นี้ไปวางแทนที่
+4.  กด **Publish** (เผยแพร่)
+
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Define a function to check for admin role
+    function isAdmin() {
+      return request.auth.token.email == 'sitti.dop@gmail.com';
+    }
+    
+    // Rules for the 'requests' collection
+    match /requests/{requestId} {
+      // Who can read documents?
+      // - The admin can read any document.
+      // - An authenticated user can read their own document.
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == resource.data.authUid);
+      
+      // Who can create documents?
+      // - Any authenticated user can create a request, as long as they set their own UID correctly.
+      allow create: if request.auth != null && request.resource.data.authUid == request.auth.uid;
+      
+      // Who can update documents?
+      // - The admin can update any document (e.g., to change status).
+      // - The user who created the document can update it (e.g., to add file URLs).
+      allow update: if isAdmin() || (request.auth != null && request.auth.uid == resource.data.authUid);
+      
+      // Nobody should be able to delete documents directly from the app.
+      allow delete: if false;
+    }
+  }
+}
