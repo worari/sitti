@@ -55,17 +55,39 @@
                 <h2 class="text-3xl font-bold text-center text-blue-800 mb-2">เข้าสู่ระบบ</h2>
                 <p class="text-center text-gray-500 mb-6">ระบบรับรองเวลาราชการทหาร</p>
                 <div id="login-error" class="text-red-500 text-sm mb-4 hidden"></div>
-                <form id="login">
-                    <div class="mb-4">
-                        <label for="login-email" class="block text-gray-700 mb-1">อีเมล</label>
-                        <input type="email" id="login-email" class="form-input" required>
-                    </div>
-                    <div class="mb-6">
-                        <label for="login-password" class="block text-gray-700 mb-1">รหัสผ่าน</label>
-                        <input type="password" id="login-password" class="form-input" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-full">เข้าสู่ระบบ</button>
-                </form>
+                <form id="login" class="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
+  <div class="mb-4">
+    <label for="login-email" class="block text-gray-700 mb-2">อีเมล</label>
+    <input
+      type="email"
+      id="login-email"
+      name="email"
+      class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      required
+      autocomplete="email"
+      placeholder="you@example.com"
+    >
+  </div>
+  <div class="mb-6">
+    <label for="login-password" class="block text-gray-700 mb-2">รหัสผ่าน</label>
+    <input
+      type="password"
+      id="login-password"
+      name="password"
+      class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      required
+      autocomplete="current-password"
+      placeholder="••••••••"
+    >
+  </div>
+  <button
+    type="submit"
+    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200"
+  >
+    เข้าสู่ระบบ
+  </button>
+</form>
+
                 <div class="text-center mt-4">
                     <a href="#" id="forgot-password-link" class="text-sm text-blue-600 hover:underline">ลืมรหัสผ่าน?</a>
                 </div>
@@ -134,59 +156,111 @@
             <main class="flex-1 p-6 overflow-y-auto">
                 <!-- Page: Form Submission -->
                 <div id="page-form" class="page">
-                    <h2 class="text-2xl font-bold mb-6 text-gray-800">แบบฟอร์มขอหนังสือรับรองเวลาราชการตอนเป็นทหาร</h2>
-                    <div class="bg-white p-8 rounded-lg shadow-md">
-                        <form id="data-form">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="md:col-span-2">
-                                    <label for="id-card" class="block text-gray-700 font-medium mb-1">เลขบัตรประจำตัวประชาชน</label>
-                                    <input type="text" id="id-card" name="id-card" class="form-input" pattern="\d{13}" title="กรุณากรอกเลขบัตรประชาชน 13 หลัก" required>
-                                </div>
-                                <div>
-                                    <label for="title-name" class="block text-gray-700 font-medium mb-1">คำนำหน้าชื่อ</label>
-                                    <input type="text" id="title-name" name="title-name" class="form-input" required>
-                                </div>
-                                <div>
-                                    <label for="first-name" class="block text-gray-700 font-medium mb-1">ชื่อ</label>
-                                    <input type="text" id="first-name" name="first-name" class="form-input" required>
-                                </div>
-                                <div>
-                                    <label for="last-name" class="block text-gray-700 font-medium mb-1">นามสกุล</label>
-                                    <input type="text" id="last-name" name="last-name" class="form-input" required>
-                                </div>
-                                <div>
-                                    <label for="agency" class="block text-gray-700 font-medium mb-1">หน่วยงาน</label>
-                                    <input type="text" id="agency" name="agency" class="form-input" required>
-                                </div>
-                                <div>
-                                    <label for="doc-number" class="block text-gray-700 font-medium mb-1">เลขที่หนังสือ</label>
-                                    <input type="text" id="doc-number" name="doc-number" class="form-input" required>
-                                </div>
-                                <div>
-                                    <label for="doc-date" class="block text-gray-700 font-medium mb-1">วันที่หนังสือ</label>
-                                    <input type="date" id="doc-date" name="doc-date" class="form-input" required>
-                                </div>
-                                <div class="md:col-span-2">
-                                    <label for="doc-type" class="block text-gray-700 font-medium mb-1">ประเภท</label>
-                                    <select id="doc-type" name="doc-type" class="form-input" required>
-                                        <option value="ใน กห.">ใน กห.</option>
-                                        <option value="นอก กห.">นอก กห.</option>
-                                    </select>
-                                </div>
-                                <div class="md:col-span-2">
-                                    <label for="file-upload" class="block text-gray-700 font-medium mb-1">อัพโหลดไฟล์แนบ (.png, .jpg, .pdf)</label>
-                                    <input type="file" id="file-upload" name="file-upload" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" multiple required>
-                                    <div id="file-list" class="mt-2 text-sm text-gray-600"></div>
-                                </div>
-                            </div>
-                            <div class="mt-8 text-right">
-                                <button type="submit" class="btn btn-secondary w-full md:w-auto">
-                                    <i class="fas fa-paper-plane"></i> ส่งข้อมูล
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+  <h2 class="text-2xl font-bold mb-6 text-blue-700">
+    <i class="fas fa-file-signature mr-2 text-orange-500"></i>
+    แบบฟอร์มขอหนังสือรับรองเวลาราชการตอนเป็นทหาร
+  </h2>
+
+  <div class="bg-white p-8 rounded-lg shadow-md">
+    <form id="data-form">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- บัตรประชาชน -->
+        <div class="md:col-span-2">
+          <label for="id-card" class="block text-orange-600 font-semibold mb-2">
+            <i class="fas fa-id-card mr-2 text-orange-500"></i> เลขบัตรประจำตัวประชาชน
+          </label>
+          <input type="text" id="id-card" name="id-card"
+            class="form-input border border-orange-400 focus:ring-orange-500" pattern="\d{13}"
+            title="กรุณากรอกเลขบัตรประชาชน 13 หลัก" required>
+        </div>
+
+        <!-- ชื่อ -->
+        <div>
+          <label for="title-name" class="block text-green-600 font-semibold mb-2">
+            <i class="fas fa-user-tag mr-2 text-green-500"></i> คำนำหน้าชื่อ
+          </label>
+          <input type="text" id="title-name" name="title-name"
+            class="form-input border border-green-400 focus:ring-green-500" required>
+        </div>
+
+        <div>
+          <label for="first-name" class="block text-green-600 font-semibold mb-2">
+            <i class="fas fa-user mr-2 text-green-500"></i> ชื่อ
+          </label>
+          <input type="text" id="first-name" name="first-name"
+            class="form-input border border-green-400 focus:ring-green-500" required>
+        </div>
+
+        <div>
+          <label for="last-name" class="block text-green-600 font-semibold mb-2">
+            <i class="fas fa-user-edit mr-2 text-green-500"></i> นามสกุล
+          </label>
+          <input type="text" id="last-name" name="last-name"
+            class="form-input border border-green-400 focus:ring-green-500" required>
+        </div>
+
+        <div>
+          <label for="agency" class="block text-blue-700 font-semibold mb-2">
+            <i class="fas fa-building mr-2 text-blue-500"></i> หน่วยงาน
+          </label>
+          <input type="text" id="agency" name="agency"
+            class="form-input border border-blue-400 focus:ring-blue-500" required>
+        </div>
+
+        <div>
+          <label for="doc-number" class="block text-blue-700 font-semibold mb-2">
+            <i class="fas fa-file-alt mr-2 text-blue-500"></i> เลขที่หนังสือ
+          </label>
+          <input type="text" id="doc-number" name="doc-number"
+            class="form-input border border-blue-400 focus:ring-blue-500" required>
+        </div>
+
+        <div>
+          <label for="doc-date" class="block text-blue-700 font-semibold mb-2">
+            <i class="fas fa-calendar-alt mr-2 text-blue-500"></i> วันที่หนังสือ
+          </label>
+          <input type="date" id="doc-date" name="doc-date"
+            class="form-input border border-blue-400 focus:ring-blue-500" required>
+        </div>
+
+        <!-- ประเภท -->
+        <div class="md:col-span-2">
+          <label for="doc-type" class="block text-blue-700 font-semibold mb-2">
+            <i class="fas fa-list-ul mr-2 text-blue-500"></i> ประเภท
+          </label>
+          <select id="doc-type" name="doc-type"
+            class="form-input border border-blue-400 focus:ring-blue-500" required>
+            <option value="">-- กรุณาเลือก --</option>
+            <option value="ใน กห.">ใน กห.</option>
+            <option value="นอก กห.">นอก กห.</option>
+          </select>
+        </div>
+
+        <!-- ไฟล์แนบ -->
+        <div class="md:col-span-2">
+          <label for="file-upload" class="block text-blue-700 font-semibold mb-2">
+            <i class="fas fa-upload mr-2 text-blue-500"></i> อัพโหลดไฟล์แนบ (.png, .jpg, .pdf)
+          </label>
+          <input type="file" id="file-upload" name="file-upload"
+            class="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-100 file:text-green-700 hover:file:bg-green-200"
+            multiple required>
+          <div id="file-list" class="mt-2 text-sm text-gray-600"></div>
+        </div>
+
+      </div>
+
+      <!-- ปุ่มส่ง -->
+      <div class="mt-8 text-right">
+        <button type="submit"
+          class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-6 rounded-lg shadow transition w-full md:w-auto">
+          <i class="fas fa-paper-plane mr-2"></i> ส่งข้อมูล
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 
                 <!-- Page: Status Tracking -->
                 <div id="page-status" class="page hidden">
